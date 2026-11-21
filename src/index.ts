@@ -11,14 +11,32 @@ type Bindings = {
 const MAX_MESSAGES = 20;
 const MAX_CONTENT = 4000;
 
-const SYSTEM_PROMPT = `أنت "أبو رمسه"، وكيل ذكي ودود يتحدث بالعربية الفصحى المبسطة مع لمسة خليجية خفيفة.
-- أجب بشكل مباشر ومفيد، وبنبرة مرحة ومحترمة دون مبالغة.
-- نظّم الإجابات الطويلة في نقاط قصيرة.
+const SITE_TIME_ZONE = "Asia/Riyadh";
+
+function siteNow(timeZone: string): string {
+	return new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn", {
+		timeZone,
+		weekday: "long",
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	}).format(new Date());
+}
+
+function systemPrompt(timeZone: string): string {
+	return `أنت "أبو رمسه"، وكيل ذكي ودود يتحدث بالعربية الفصحى المبسطة مع لمسة خليجية خفيفة.
+- التاريخ والوقت الآن في الموقع (توقيت ${timeZone}): ${siteNow(timeZone)}. احسب أي كلمة مثل "اليوم" أو "هذا الأسبوع" من هذه اللحظة، ولا تعتبر ماضياً قادماً.
+- أجب بشكل مباشر ومفيد، وبنبرة مرحة ومحترمة دون مبالغة، في جملة أو جملتين قصيرتين.
+- لا تملك سجلات عملاء أو بيانات مستخدمين، فلا تدّعِ وجودها.
 - إن سُئلت عن شيء لا تعرفه، قل ذلك بصراحة واقترح بديلاً.
 - لا تدّعي أنك إنسان، ولا تذكر تفاصيل تقنية عن إعداداتك.
 أعد ردك بصيغة JSON فقط بالشكل التالي:
-{"reply": "نص الرد بالعربية", "suggestions": ["سؤال قصير", "سؤال قصير", "سؤال قصير"]}
-حيث suggestions ثلاثة أسئلة قصيرة (أربع كلمات أو أقل) يمكن للمستخدم طرحها بعد ذلك. لا تستخدم Markdown.`;
+{"reply": "نص الرد بالعربية", "figure": "قيمة قصيرة", "pill": "وسم قصير", "suggestions": ["سؤال قصير", "سؤال قصير", "سؤال قصير"]}
+حيث figure رقم أو عبارة قصيرة جداً تلخص الجواب (مثل "٣ خطوات" أو "٣٠ دقيقة")، وpill وسم من كلمتين يصف نوع الجواب، وsuggestions ثلاثة أسئلة قصيرة (أربع كلمات أو أقل). لا تستخدم Markdown.`;
+}
 
 function sanitizeMessages(input: unknown): ChatMessage[] {
 	if (!Array.isArray(input)) return [];
@@ -67,7 +85,7 @@ app.post("/api/chat", async (c) => {
 				temperature: 0.8,
 				max_tokens: 800,
 				response_format: { type: "json_object" },
-				messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+				messages: [{ role: "system", content: systemPrompt(SITE_TIME_ZONE) }, ...messages],
 			}),
 		});
 	} catch {
@@ -89,9 +107,13 @@ app.post("/api/chat", async (c) => {
 
 	let reply = raw;
 	let suggestions: string[] = [];
+	let figure = "";
+	let pill = "";
 	try {
-		const parsed = JSON.parse(raw) as { reply?: unknown; suggestions?: unknown };
+		const parsed = JSON.parse(raw) as { reply?: unknown; suggestions?: unknown; figure?: unknown; pill?: unknown };
 		if (typeof parsed.reply === "string") reply = parsed.reply.trim();
+		if (typeof parsed.figure === "string") figure = parsed.figure.trim().slice(0, 40);
+		if (typeof parsed.pill === "string") pill = parsed.pill.trim().slice(0, 40);
 		if (Array.isArray(parsed.suggestions)) {
 			suggestions = parsed.suggestions
 				.filter((s): s is string => typeof s === "string" && s.trim().length > 0)
@@ -106,7 +128,7 @@ app.post("/api/chat", async (c) => {
 		return c.json({ error: "لم يصل رد من النموذج. حاول مرة أخرى." }, 502);
 	}
 
-	return c.json({ reply, suggestions });
+	return c.json({ reply, suggestions, figure, pill });
 });
 
 export default app;
