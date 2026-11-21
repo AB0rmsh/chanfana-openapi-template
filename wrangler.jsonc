@@ -3,6 +3,9 @@
 	"main": "src/index.ts",
 	"name": "chanfana-openapi-template",
 	"upload_source_maps": true,
+	"assets": {
+		"directory": "./public"
+	},
 	"observability": {
 		"enabled": true
 	},

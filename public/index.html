@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<title>أبو رمسه — وكيل ذكي</title>
+		<meta name="description" content="أبو رمسه، وكيل ذكي يجاوبك بالعربي على أي سؤال." />
+		<link rel="stylesheet" href="/styles.css" />
+	</head>
+	<body>
+		<div class="app">
+			<header class="topbar">
+				<div class="brand">
+					<div class="avatar" aria-hidden="true">أر</div>
+					<div class="brand-text">
+						<h1>أبو رمسه</h1>
+						<p><span class="dot"></span> وكيل ذكي • جاهز للرمسة</p>
+					</div>
+				</div>
+				<button id="reset" class="ghost" type="button">محادثة جديدة</button>
+			</header>
+
+			<main id="chat" class="chat">
+				<section class="welcome" id="welcome">
+					<div class="welcome-avatar" aria-hidden="true">أر</div>
+					<h2>هلا والله، أنا أبو رمسه</h2>
+					<p>اسألني عن أي شي: شرح فكرة، ترجمة، كتابة، أو رمسة تسلّي الجو.</p>
+					<div class="chips">
+						<button class="chip" type="button" data-prompt="اشرح لي الذكاء الاصطناعي ببساطة">اشرح الذكاء الاصطناعي ببساطة</button>
+						<button class="chip" type="button" data-prompt="أعطني ثلاث أفكار لمشروع صغير ناجح">ثلاث أفكار لمشروع صغير</button>
+						<button class="chip" type="button" data-prompt="اكتب لي رسالة شكر قصيرة لزميل في العمل">رسالة شكر لزميل</button>
+						<button class="chip" type="button" data-prompt="لخص لي فوائد المشي اليومي في نقاط">فوائد المشي اليومي</button>
+					</div>
+				</section>
+			</main>
+
+			<form id="composer" class="composer" autocomplete="off">
+				<label class="sr-only" for="input">رسالتك</label>
+				<textarea id="input" rows="1" maxlength="4000" placeholder="اكتب رسالتك لأبو رمسه…"></textarea>
+				<button id="send" class="send" type="submit" aria-label="إرسال">
+					<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+						<path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</button>
+			</form>
+			<p class="foot">أبو رمسه قد يخطئ أحياناً — تحقق من المعلومات المهمة.</p>
+		</div>
+		<script src="/app.js" type="module"></script>
+	</body>
+</html>
