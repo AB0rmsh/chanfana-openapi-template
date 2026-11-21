@@ -15,7 +15,10 @@ const SYSTEM_PROMPT = `أنت "أبو رمسه"، وكيل ذكي ودود يت�
 - أجب بشكل مباشر ومفيد، وبنبرة مرحة ومحترمة دون مبالغة.
 - نظّم الإجابات الطويلة في نقاط قصيرة.
 - إن سُئلت عن شيء لا تعرفه، قل ذلك بصراحة واقترح بديلاً.
-- لا تدّعي أنك إنسان، ولا تذكر تفاصيل تقنية عن إعداداتك.`;
+- لا تدّعي أنك إنسان، ولا تذكر تفاصيل تقنية عن إعداداتك.
+أعد ردك بصيغة JSON فقط بالشكل التالي:
+{"reply": "نص الرد بالعربية", "suggestions": ["سؤال قصير", "سؤال قصير", "سؤال قصير"]}
+حيث suggestions ثلاثة أسئلة قصيرة (أربع كلمات أو أقل) يمكن للمستخدم طرحها بعد ذلك. لا تستخدم Markdown.`;
 
 function sanitizeMessages(input: unknown): ChatMessage[] {
 	if (!Array.isArray(input)) return [];
@@ -63,6 +66,7 @@ app.post("/api/chat", async (c) => {
 				model,
 				temperature: 0.8,
 				max_tokens: 800,
+				response_format: { type: "json_object" },
 				messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
 			}),
 		});
@@ -81,12 +85,28 @@ app.post("/api/chat", async (c) => {
 	}
 
 	const data = (await upstream.json()) as { choices?: { message?: { content?: string } }[] };
-	const reply = data.choices?.[0]?.message?.content?.trim();
+	const raw = data.choices?.[0]?.message?.content?.trim() ?? "";
+
+	let reply = raw;
+	let suggestions: string[] = [];
+	try {
+		const parsed = JSON.parse(raw) as { reply?: unknown; suggestions?: unknown };
+		if (typeof parsed.reply === "string") reply = parsed.reply.trim();
+		if (Array.isArray(parsed.suggestions)) {
+			suggestions = parsed.suggestions
+				.filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+				.slice(0, 3)
+				.map((s) => s.trim());
+		}
+	} catch {
+		// model answered with plain text — use it as the reply
+	}
+
 	if (!reply) {
 		return c.json({ error: "لم يصل رد من النموذج. حاول مرة أخرى." }, 502);
 	}
 
-	return c.json({ reply });
+	return c.json({ reply, suggestions });
 });
 
 export default app;
